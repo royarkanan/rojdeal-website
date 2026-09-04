@@ -4,11 +4,18 @@ export type PlatformVideo = {
   id: string;
   titles: Record<string, string>;
   mediaUrl: string;
+  posterUrl: string;
   active: boolean;
   startAt: string | null;
   endAt: string | null;
   sortOrder: number;
 };
+
+function posterUrlFromStyle(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  const poster = (value as Record<string, unknown>).posterUrl;
+  return typeof poster === "string" ? poster : "";
+}
 
 export type UserNotification = {
   id: string;
@@ -23,7 +30,7 @@ export type UserNotification = {
 export async function homeVideos(): Promise<PlatformVideo[]> {
   const { data, error } = await supabase
     .from("platform_media_items")
-    .select("id,titles,media_url,is_active,start_at,end_at,sort_order")
+    .select("id,titles,media_url,display_style,is_active,start_at,end_at,sort_order")
     .eq("placement_key", "home_carousel")
     .eq("media_type", "video")
     .eq("is_active", true)
@@ -36,6 +43,7 @@ export async function homeVideos(): Promise<PlatformVideo[]> {
       ? row.titles
       : {}) as Record<string, string>,
     mediaUrl: String(row.media_url ?? ""),
+    posterUrl: posterUrlFromStyle(row.display_style),
     active: row.is_active === true,
     startAt: row.start_at ? String(row.start_at) : null,
     endAt: row.end_at ? String(row.end_at) : null,
@@ -46,7 +54,7 @@ export async function homeVideos(): Promise<PlatformVideo[]> {
 export async function adminVideos(): Promise<PlatformVideo[]> {
   const { data, error } = await supabase
     .from("platform_media_items")
-    .select("id,titles,media_url,is_active,start_at,end_at,sort_order")
+    .select("id,titles,media_url,display_style,is_active,start_at,end_at,sort_order")
     .eq("placement_key", "home_carousel")
     .eq("media_type", "video")
     .order("sort_order")
@@ -56,6 +64,7 @@ export async function adminVideos(): Promise<PlatformVideo[]> {
     id: String(row.id),
     titles: (row.titles ?? {}) as Record<string, string>,
     mediaUrl: String(row.media_url ?? ""),
+    posterUrl: posterUrlFromStyle(row.display_style),
     active: row.is_active === true,
     startAt: row.start_at ? String(row.start_at) : null,
     endAt: row.end_at ? String(row.end_at) : null,
@@ -135,6 +144,7 @@ export async function saveAdminVideos(videos: PlatformVideo[]) {
       loopPlaylist: true,
       autoPlay: false,
       controlsAutoHideSeconds: 3,
+      posterUrl: video.posterUrl.trim() || null,
     },
   }));
   const { error } = await supabase.rpc("replace_home_platform_videos", {
@@ -143,17 +153,155 @@ export async function saveAdminVideos(videos: PlatformVideo[]) {
   if (error) throw error;
 }
 
+async function createVideoPosterBlob(file: Blob): Promise<Blob> {
+  if (typeof document === "undefined") throw new Error("browser_required");
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    return await new Promise<Blob>((resolve, reject) => {
+      const video = document.createElement("video");
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = "auto";
+
+      let finished = false;
+      const timer = window.setTimeout(() => {
+        if (!finished) {
+          finished = true;
+          reject(new Error("video_poster_timeout"));
+        }
+      }, 20000);
+
+      const fail = () => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timer);
+        reject(new Error("video_poster_failed"));
+      };
+
+      const capture = () => {
+        if (finished || !video.videoWidth || !video.videoHeight) return;
+
+        const maxWidth = 1280;
+        const scale = Math.min(1, maxWidth / video.videoWidth);
+        const width = Math.max(1, Math.round(video.videoWidth * scale));
+        const height = Math.max(1, Math.round(video.videoHeight * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          fail();
+          return;
+        }
+
+        try {
+          context.drawImage(video, 0, 0, width, height);
+        } catch {
+          fail();
+          return;
+        }
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || finished) {
+              fail();
+              return;
+            }
+            finished = true;
+            window.clearTimeout(timer);
+            resolve(blob);
+          },
+          "image/jpeg",
+          0.84,
+        );
+      };
+
+      video.onerror = fail;
+      video.onseeked = capture;
+
+      video.onloadedmetadata = () => {
+        const duration =
+          Number.isFinite(video.duration) && video.duration > 0
+            ? video.duration
+            : 0;
+
+        if (duration <= 0) {
+          fail();
+          return;
+        }
+
+        const targetTime =
+          duration > 2
+            ? 1
+            : Math.max(0.01, duration / 2);
+
+        video.currentTime = targetTime;
+      };
+
+      video.src = objectUrl;
+      video.load();
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function uploadPosterBlob(userId: string, poster: Blob) {
+  const path = `${userId}/web-${Date.now()}-poster.jpg`;
+  const { error } = await supabase.storage
+    .from("platform-content")
+    .upload(path, poster, {
+      contentType: "image/jpeg",
+      cacheControl: "31536000",
+    });
+  if (error) throw error;
+
+  return supabase.storage.from("platform-content").getPublicUrl(path).data
+    .publicUrl;
+}
+
 export async function uploadAdminVideo(file: File) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("authentication_required");
+
+  const poster = await createVideoPosterBlob(file);
   const extension = file.name.split(".").pop()?.toLowerCase() || "mp4";
-  const path = `${auth.user.id}/web-${Date.now()}.${extension}`;
+  const videoPath = `${auth.user.id}/web-${Date.now()}.${extension}`;
+
   const { error } = await supabase.storage
     .from("platform-content")
-    .upload(path, file, { contentType: file.type || "video/mp4" });
+    .upload(videoPath, file, {
+      contentType: file.type || "video/mp4",
+      cacheControl: "31536000",
+    });
   if (error) throw error;
-  return supabase.storage.from("platform-content").getPublicUrl(path).data
-    .publicUrl;
+
+  try {
+    const posterUrl = await uploadPosterBlob(auth.user.id, poster);
+    const mediaUrl = supabase.storage
+      .from("platform-content")
+      .getPublicUrl(videoPath).data.publicUrl;
+
+    return { mediaUrl, posterUrl };
+  } catch (error) {
+    await supabase.storage.from("platform-content").remove([videoPath]);
+    throw error;
+  }
+}
+
+export async function generateAdminVideoPoster(mediaUrl: string) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("authentication_required");
+
+  const response = await fetch(mediaUrl);
+  if (!response.ok) throw new Error("video_download_failed");
+
+  const videoBlob = await response.blob();
+  const poster = await createVideoPosterBlob(videoBlob);
+  return uploadPosterBlob(auth.user.id, poster);
 }
 
 export type ManagedPageKey =
