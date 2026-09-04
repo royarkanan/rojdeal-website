@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "RojDeal",
+    "tagline": "Your trusted marketplace for real estate and vehicles",
+    "search": "Search",
+    "searchPlaceholder": "Search for properties, vehicles, brands or locations...",
+    "allCategories": "All Categories",
+    "allCities": "All Cities",
+    "price": "Price",
+    "priceOnContact": "Price upon request",
+    "featured": "Featured",
+    "viewDetails": "View Details",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "share": "Share",
+    "favorite": "Favorites",
+    "addListing": "Post Ad",
+    "login": "Sign In",
+    "language": "Language",
+    "noResults": "No results found matching your criteria",
+    "retry": "Try again",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "home": "Home",
+    "realEstate": "Real Estate",
+    "vehicles": "Vehicles",
+    "search": "Advanced Search",
+    "about": "About Us",
+    "contact": "Contact",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "safety": "Safety Guide"
+  },
+  "categories": {
+    "real_estate": "Real Estate",
+    "vehicles": "Vehicles",
+    "miscellaneous": "Other"
+  },
+  "purpose": {
+    "all": "All",
+    "sell": "For Sale",
+    "rent": "For Rent",
+    "wanted": "Wanted"
+  },
+  "listingDetails": {
+    "specifications": "Key Specifications",
+    "description": "Description",
+    "location": "Location",
+    "sellerInfo": "Seller Information",
+    "verifiedSeller": "Verified Account",
+    "postedAt": "Published Date",
+    "views": "Views",
+    "similarListings": "Similar Listings"
+  }
+}

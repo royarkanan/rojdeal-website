@@ -1,0 +1,9 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {prepare}=require('../scripts/prepare-local-lab.cjs'),{assertLocalUrl}=require('../scripts/check-local-lab.cjs');
+test('local lab refuses remote, credentialed, wrong-port and redirected endpoints',()=>{assert.equal(assertLocalUrl('http://127.0.0.1:54381',54381),'http://127.0.0.1:54381');for(const url of ['https://rojdeal.app','https://project.supabase.co','http://127.0.0.1:54321','http://user:password@localhost:54381','http://localhost:54381/path','http://localhost:54381?redirect=remote'])assert.throws(()=>assertLocalUrl(url,54381));});
+test('lab preparation excludes production-owner seeds and never overwrites an existing lab conflict',()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'rojdeal-lab-test-'));
+ try{const app=path.join(tmp,'app'),web=path.join(tmp,'web');fs.mkdirSync(path.join(app,'supabase/migrations'),{recursive:true});fs.mkdirSync(web);for(const f of ['schema.sql','city_upgrade.sql','professional_admin_upgrade.sql'])fs.writeFileSync(path.join(app,'supabase',f),'-- fixture '+f);fs.writeFileSync(path.join(app,'supabase/migrations/20260811002422_add_platform_owners.sql'),'-- production account ids');fs.writeFileSync(path.join(app,'supabase/migrations/20260812000000_fixture.sql'),'-- fixture migration');
+ const result=prepare(app,web);assert.equal(result.migrationCount,4);assert.equal(fs.existsSync(path.join(result.lab,'supabase/migrations/20260811002422_add_platform_owners.sql')),false);assert.equal(prepare(app,web).migrationCount,4);fs.writeFileSync(path.join(result.lab,'supabase/config.toml'),'user change');assert.throws(()=>prepare(app,web),/nothing changed/);assert.equal(fs.readFileSync(path.join(result.lab,'supabase/config.toml'),'utf8'),'user change');
+ }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});

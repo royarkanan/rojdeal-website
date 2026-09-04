@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "RojDeal",
+    "tagline": "Platforma we ya pêbawer ji bo xanî, dikan û erebeyan",
+    "search": "Lêgerîn",
+    "searchPlaceholder": "Li xanî, erebe, marqe an cîhekî bigere...",
+    "allCategories": "Hemû beş",
+    "allCities": "Hemû bajar",
+    "price": "Bihaye",
+    "priceOnContact": "Bi peywendîkirinê",
+    "featured": "Taybet",
+    "viewDetails": "Hûragahiyan bibîne",
+    "call": "Telefon bike",
+    "whatsapp": "WhatsApp",
+    "share": "Parve bike",
+    "favorite": "Bijarte",
+    "addListing": "Îlanê zêde bike",
+    "login": "Têkeve",
+    "language": "Ziman",
+    "noResults": "Ti encam nehatin dîtin",
+    "retry": "Dîsa biceribîne",
+    "loading": "Tê barkirin..."
+  },
+  "nav": {
+    "home": "Serûpel",
+    "realEstate": "Xanî û Erd",
+    "vehicles": "Erebe û Makîne",
+    "search": "Lêgerîna berfireh",
+    "about": "Derbarê RojDeal de",
+    "contact": "Peywendî",
+    "terms": "Şert û merc",
+    "privacy": "Siyaseta taybetmendiyê",
+    "safety": "Rêbernameya ewlehiyê"
+  },
+  "categories": {
+    "real_estate": "Xanî û Erd",
+    "vehicles": "Erebe û Makîne",
+    "miscellaneous": "Yên din"
+  },
+  "purpose": {
+    "all": "Hemû",
+    "sell": "Firotin",
+    "rent": "Kirê",
+    "wanted": "Tê xwestin"
+  },
+  "listingDetails": {
+    "specifications": "Taybetmendiyên sereke",
+    "description": "Danasîn û agahî",
+    "location": "Cih û dever",
+    "sellerInfo": "Agahiyên xwediyê îlanê",
+    "verifiedSeller": "Hesabê piştrastkirî",
+    "postedAt": "Dîroka weşandinê",
+    "views": "Dîtin",
+    "similarListings": "Îlanên wekhev"
+  }
+}

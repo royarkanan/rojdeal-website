@@ -1,0 +1,21 @@
+project_id = "rojdeal-parity-local"
+[api]
+port = 54381
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+[db]
+port = 54382
+shadow_port = 54380
+major_version = 15
+[db.seed]
+enabled = false
+[studio]
+port = 54383
+[inbucket]
+port = 54384
+[auth]
+site_url = "http://127.0.0.1:3002"
+additional_redirect_urls = ["http://localhost:3002/**", "http://127.0.0.1:3002/**"]
+[auth.email]
+enable_signup = true
+enable_confirmations = false

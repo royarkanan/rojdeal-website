@@ -1,0 +1,1 @@
+import{ProfileEditor}from"@/components/auth/ProfileEditor";import{i18n,type Locale}from"@/lib/i18n-config";export default async function Page({params}:{params:Promise<{lang:string}>}){const{lang:r}=await params;const lang=(i18n.locales.includes(r as Locale)?r:i18n.defaultLocale)as Locale;return <ProfileEditor lang={lang}/>}

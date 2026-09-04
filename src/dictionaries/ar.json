@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "روج ديل",
+    "tagline": "منصتك الموثوقة للعقارات والسيارات",
+    "search": "بحث",
+    "searchPlaceholder": "ابحث عن عقار، سيارة، ماركة أو موقع...",
+    "allCategories": "جميع الأقسام",
+    "allCities": "جميع المدن",
+    "price": "السعر",
+    "priceOnContact": "السعر عند التواصل",
+    "featured": "مميز",
+    "viewDetails": "عرض التفاصيل",
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "share": "مشاركة",
+    "favorite": "المفضلة",
+    "addListing": "أضف إعلانك",
+    "login": "تسجيل الدخول",
+    "language": "اللغة",
+    "noResults": "لم يتم العثور على نتائج تطابق بحثك",
+    "retry": "إعادة المحاولة",
+    "loading": "جاري التحميل..."
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "realEstate": "عقارات",
+    "vehicles": "سيارات وآليات",
+    "search": "البحث المتقدم",
+    "about": "عن روج ديل",
+    "contact": "اتصل بنا",
+    "terms": "الشروط والأحكام",
+    "privacy": "سياسة الخصوصية",
+    "safety": "إرشادات الأمان"
+  },
+  "categories": {
+    "real_estate": "عقارات",
+    "vehicles": "سيارات وآليات",
+    "miscellaneous": "أخرى"
+  },
+  "purpose": {
+    "all": "الكل",
+    "sell": "للبيع",
+    "rent": "للإيجار",
+    "wanted": "مطلوب للشراء"
+  },
+  "listingDetails": {
+    "specifications": "المواصفات الأساسية",
+    "description": "الوصف والبيانات",
+    "location": "الموقع الجغرافي",
+    "sellerInfo": "معلومات المعلن",
+    "verifiedSeller": "حساب موثق",
+    "postedAt": "تاريخ النشر",
+    "views": "مشاهدة",
+    "similarListings": "إعلانات مشابهة قد تهمك"
+  }
+}

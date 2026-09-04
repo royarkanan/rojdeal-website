@@ -1,0 +1,30 @@
+node_modules/
+.next/
+.open-next/
+.wrangler/
+.env*
+.dev.vars*
+*.tsbuildinfo
+
+# Local build/runtime
+node_modules/
+.next/
+.open-next/
+.wrangler/
+tsconfig.tsbuildinfo
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Supabase local/runtime files
+supabase/.temp/
+test-lab/supabase/.temp/
+test-lab/supabase/.branches/
+test-lab/supabase/snippets/
+
+# Temporary backups
+src/app/[lang]/layout.tsx.bak-adsense
+*.bak-*
+*.backup-*
