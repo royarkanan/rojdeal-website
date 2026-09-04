@@ -48,17 +48,8 @@ export function HomeAdminVideos({ lang }: { lang: Locale }) {
           src={current.mediaUrl}
           controls
           playsInline
-          preload="auto"
-          onLoadedData={(event) => {
-            const element = event.currentTarget;
-            if (
-              element.currentTime === 0 &&
-              Number.isFinite(element.duration) &&
-              element.duration > 0
-            ) {
-              element.currentTime = Math.min(0.1, element.duration / 20);
-            }
-          }}
+          preload="metadata"
+          poster={current.posterUrl || undefined}
           onEnded={() => items.length > 1 && move(1)}
           className="aspect-video max-h-[70vh] w-full bg-black object-contain"
         />
