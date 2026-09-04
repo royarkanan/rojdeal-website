@@ -48,9 +48,10 @@ export function HomeAdminVideos({ lang }: { lang: Locale }) {
           src={current.mediaUrl}
           controls
           playsInline
-          preload="metadata"
+          preload="auto"
+          poster="/brand/rojdeal_mark.png"
           onEnded={() => items.length > 1 && move(1)}
-          className="aspect-video max-h-[70vh] w-full bg-black object-contain"
+          className="aspect-video max-h-[70vh] w-full bg-white object-contain"
         />
         {items.length > 1 && (
           <>

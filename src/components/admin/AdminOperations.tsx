@@ -237,7 +237,7 @@ export function AdminOperations({
     if(request && /^[0-9a-f-]{36}$/i.test(request)) {setThread(request);setQuery(request);}
   },[]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { preserveOnError?: boolean }) => {
     if (!available.includes(section)) return;
     const generation=++loadGeneration.current;
     setBusy(true);
@@ -277,9 +277,11 @@ export function AdminOperations({
     } catch (error) {
       if(generation!==loadGeneration.current)return;
       console.error("ADMIN LOAD FAILED", error);
-      setNotice(t.failed);
-      setItems([]);
-      setHasMore(false);
+      if (!options?.preserveOnError) {
+        setNotice(t.failed);
+        setItems([]);
+        setHasMore(false);
+      }
       return false;
     } finally {
       if(generation===loadGeneration.current)setBusy(false);
@@ -304,7 +306,11 @@ export function AdminOperations({
     setNotice("");
     try {
       await action();
-      const refreshed=await load();
+      let refreshed=await load({preserveOnError:true});
+      if(!refreshed){
+        await new Promise<void>((resolve)=>window.setTimeout(resolve,400));
+        refreshed=await load({preserveOnError:true});
+      }
       setNotice(refreshed?t.saved:adminText("refreshFailed",lang));
     } catch (error) {
       console.error("ADMIN ACTION FAILED", error);

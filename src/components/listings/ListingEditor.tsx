@@ -28,7 +28,7 @@ import { listingError, listingFeedback } from '@/lib/listing-feedback';
 
 const copy = {
   ar: {
-    create: "أضف إعلانًا",
+    create: "أضف إعلاناً",
     edit: "تعديل الإعلان",
     title: "عنوان الإعلان",
     description: "الوصف",
