@@ -49,9 +49,18 @@ export function HomeAdminVideos({ lang }: { lang: Locale }) {
           controls
           playsInline
           preload="auto"
-          poster="/brand/rojdeal_mark.png"
+          onLoadedData={(event) => {
+            const element = event.currentTarget;
+            if (
+              element.currentTime === 0 &&
+              Number.isFinite(element.duration) &&
+              element.duration > 0
+            ) {
+              element.currentTime = Math.min(0.1, element.duration / 20);
+            }
+          }}
           onEnded={() => items.length > 1 && move(1)}
-          className="aspect-video max-h-[70vh] w-full bg-white object-contain"
+          className="aspect-video max-h-[70vh] w-full bg-black object-contain"
         />
         {items.length > 1 && (
           <>
