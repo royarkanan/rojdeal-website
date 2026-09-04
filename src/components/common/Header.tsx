@@ -70,7 +70,7 @@ export const Header: React.FC<{ lang: Locale; dict: Record<string, any> }> = ({
             {
               href: `/${lang}/listings/new`,
               icon: PlusCircle,
-              ar: "أضف إعلانًا",
+              ar: "أضف إعلاناً",
               ku: "Îlan zêde bike",
               de: "Anzeige",
               en: "Add listing",
