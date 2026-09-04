@@ -15,7 +15,7 @@ export type WebMessage = {
   createdAt: string;
   read: boolean;
   deleted?:boolean;
-  attachments?:{id:string;name:string;url:string|null;kind:string}[];
+  attachments?:{id:string;name:string;url:string|null;kind:string;sizeBytes:number}[];
 };
 async function currentUser() {
   const { data, error } = await supabase.auth.getUser();
@@ -80,8 +80,9 @@ export async function conversations(): Promise<WebConversation[]> {
   const result = ids.length
     ? await supabase
         .from("messages")
-        .select("conversation_id,sender_id,body,created_at,read_at")
+        .select("conversation_id,sender_id,body,created_at,read_at,deleted_for_everyone_at")
         .in("conversation_id", ids)
+        .is("deleted_for_everyone_at", null)
         .order("created_at", { ascending: false })
     : { data: [], error: null };
   if (result.error) throw result.error;
@@ -108,14 +109,17 @@ export async function messages(id: string): Promise<WebMessage[]> {
   const u = await currentUser();
   const { data, error } = await supabase
     .from("messages")
-    .select("id,sender_id,body,created_at,read_at,deleted_for_everyone_at,message_attachments(id,kind,storage_path,original_name,upload_state,deleted_at)")
+    .select("id,sender_id,body,created_at,read_at,deleted_for_everyone_at,message_attachments(id,kind,storage_path,original_name,size_bytes,upload_state,deleted_at)")
     .eq("conversation_id", id)
+    .is("deleted_for_everyone_at", null)
     .order("created_at");
   if (error) throw error;
   await supabase.rpc("mark_conversation_read", { target_conversation: id });
-  return Promise.all((data??[]).map(async r=>({
-    id:String(r.id),body:r.deleted_for_everyone_at?'':String(r.body??''),mine:r.sender_id===u.id,createdAt:String(r.created_at),read:r.read_at!=null,deleted:Boolean(r.deleted_for_everyone_at),
-    attachments:r.deleted_for_everyone_at?[]:await Promise.all((r.message_attachments??[]).filter(a=>a.upload_state==='complete'&&a.deleted_at==null).map(async a=>{let url:string|null=null;try{const signed=await supabase.storage.from('chat-attachments').createSignedUrl(a.storage_path,3600);if(!signed.error)url=signed.data?.signedUrl??null;}catch{/* Keep the conversation readable when an attachment cannot load. */}return{id:String(a.id),name:String(a.original_name),kind:String(a.kind),url};})),
+  return Promise.all((data??[])
+    .filter(r=>!r.deleted_for_everyone_at)
+    .map(async r=>({
+    id:String(r.id),body:String(r.body??''),mine:r.sender_id===u.id,createdAt:String(r.created_at),read:r.read_at!=null,
+    attachments:await Promise.all((r.message_attachments??[]).filter(a=>a.upload_state==='complete'&&a.deleted_at==null).map(async a=>{let url:string|null=null;try{const signed=await supabase.storage.from('chat-attachments').createSignedUrl(a.storage_path,3600);if(!signed.error)url=signed.data?.signedUrl??null;}catch{/* Keep the conversation readable when an attachment cannot load. */}return{id:String(a.id),name:String(a.original_name),kind:String(a.kind),sizeBytes:Number(a.size_bytes??0),url};})),
   })));
 
 }
