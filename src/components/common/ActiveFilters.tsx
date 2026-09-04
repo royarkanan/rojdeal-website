@@ -1,0 +1,14 @@
+import Link from 'next/link';
+import type {Locale} from '@/lib/i18n-config';
+import {pageHref} from '@/lib/pagination';
+import {activeLocations} from '@/services/locations';
+import {locationPath} from '@/lib/location-path';
+const labels:Record<string,string[]>={q:['البحث','Lêgerîn','Suche','Search'],category:['القسم','Beş','Kategorie','Category'],purpose:['نوع الطلب','Cure','Angebotstyp','Purpose'],transactionType:['المعاملة','Danûstandin','Geschäftsart','Transaction'],city:['المدينة','Bajar','Ort','City'],governorate:['المحافظة','Parêzgeh','Region','Region'],locationIds:['المناطق','Herêm','Orte','Locations'],minPrice:['السعر من','Biha ji','Preis ab','Price from'],maxPrice:['السعر حتى','Biha heta','Preis bis','Price to'],sortBy:['الترتيب','Rêzkirin','Sortierung','Sort']};
+const values:Record<string,string[]>={real_estate:['عقارات','Emlak','Immobilien','Real estate'],vehicles:['مركبات','Erebe','Fahrzeuge','Vehicles'],miscellaneous:['أغراض متنوعة','Tiştên din','Verschiedenes','Miscellaneous'],sell:['للبيع','Ji bo firotinê','Verkauf','Sale'],sale:['بيع','Firotin','Verkauf','Sale'],rent:['إيجار','Kirê','Miete','Rent'],wanted:['مطلوب','Tê xwestin','Gesucht','Wanted'],lease:['ضمان','Kirêya dirêj','Pacht','Lease'],exchange:['مبادلة','Guhertin','Tausch','Exchange'],installment:['تقسيط','Bi qist','Ratenzahlung','Installments'],donation:['تبرع','Bexş','Spende','Donation'],partnership:['شراكة','Hevkarî','Partnerschaft','Partnership'],assignment:['تنازل','Devjêberdan','Übertragung','Assignment'],other:['أخرى','Din','Andere','Other'],newest:['الأحدث','Herî nû','Neueste','Newest'],price_asc:['الأرخص أولاً','Ji kêm','Preis aufsteigend','Lowest price'],price_desc:['الأغلى أولاً','Ji zêde','Preis absteigend','Highest price']};
+export async function ActiveFilters({lang,params}:{lang:Locale;params:Record<string,unknown>}){
+ const index=['ar','ku','de','en'].indexOf(lang),entries=Object.entries(params).filter(([k,v])=>labels[k]&&typeof v==='string'&&v);
+ if(!entries.length)return null;
+ const nodes=params.locationIds?await activeLocations().catch(()=>[]):[];
+ const remove=['إزالة','Rake','Entfernen','Remove'][index];
+ return <nav aria-label={['الفلاتر المفعّلة','Parzûnên çalak','Aktive Filter','Active filters'][index]} className="flex flex-wrap gap-2">{entries.map(([key,value])=>{const text=key==='locationIds'?String(value).split(',').map(id=>locationPath(nodes,Number(id),lang)||id).join(' · '):(['category','purpose','transactionType','sortBy'].includes(key)?values[String(value)]?.[index]:undefined)??String(value);return <Link key={key} href={pageHref(`/${lang}/search`,{...params,[key]:undefined},1)} aria-label={`${remove}: ${labels[key][index]} ${text}`} className="max-w-full break-words rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-rojNavy">{labels[key][index]}: {text} <span aria-hidden>×</span></Link>;})}</nav>;
+}

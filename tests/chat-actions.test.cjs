@@ -1,0 +1,24 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+function fixture(){
+ const tables={messages:[],message_attachments:[],conversations:[]},objects=new Set(),calls=[],faults={};let actor='owner';
+ const supabase={auth:{getUser:async()=>({data:{user:{id:actor}},error:null})},from(table){let action='select',values,filters=[];const q={select(){return q},insert(v){action='insert';values=v;return q},update(v){action='update';values=v;return q},eq(k,v){filters.push([k,v]);return q},maybeSingle(){return q},then(ok,bad){return Promise.resolve().then(()=>{calls.push([table,action,values]);if(faults[table]==='deny')return {data:null,error:{code:'42501'}};if(action==='insert'){tables[table].push({...values,...(table==='message_attachments'?{upload_state:'complete'}:{})});if(faults[table]==='lost'){delete faults[table];return {data:null,error:new Error('network')};}return {data:values,error:null};}return {data:tables[table].find(r=>filters.every(([k,v])=>r[k]===v))??null,error:null};}).then(ok,bad)}};return q},rpc:async(name,args)=>{calls.push(['rpc',name,args]);if(faults.rpc)return {error:{code:'42501'}};if(name==='abandon_message_upload')tables.messages=tables.messages.filter(r=>r.id!==args.target_message);return {error:null}},storage:{from:bucket=>({upload:async(path,file,options)=>{calls.push(['upload',bucket,path,options]);if(objects.has(path))return {error:{statusCode:'409'}};objects.add(path);if(faults.upload){delete faults.upload;return {error:new Error('network')}}return {error:null}},remove:async(paths)=>{calls.push(['remove',paths]);paths.forEach(p=>objects.delete(p));return {error:null}}})}};
+ const source=ts.transpileModule(fs.readFileSync('src/services/chat-actions.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,m={exports:{}};new Function('module','exports','require',source)(m,m.exports,n=>n==='@/lib/supabase'?{supabase}:require(n));
+ return {api:m.exports,tables,objects,calls,faults,setActor:id=>actor=id};
+}
+const file=()=>new File(['example'],'photo.jpg',{type:'image/jpeg'});
+test('chat attachment retries reuse message and metadata IDs after lost responses',async()=>{
+ for(const failure of ['messages','message_attachments','upload']){const f=fixture(),attempt={},image=file();f.faults[failure]=failure==='upload'?true:'lost';await assert.rejects(f.api.sendChatAttachment('conversation',image,'hello',attempt));await f.api.sendChatAttachment('conversation',image,'hello',attempt);assert.equal(f.tables.messages.length,1);assert.equal(f.tables.message_attachments.length,1);assert.equal(f.objects.size,1);assert.equal(f.tables.message_attachments[0].uploader_id,'owner');assert.equal(f.calls.find(c=>c[0]==='upload')[1],'chat-attachments');}
+});
+test('chat retry cannot transfer a pending upload to another account or silently change its text',async()=>{
+ const f=fixture(),attempt={},image=file();f.faults.upload=true;await assert.rejects(f.api.sendChatAttachment('conversation',image,'hello',attempt));f.setActor('other');await assert.rejects(f.api.sendChatAttachment('conversation',image,'hello',attempt),/pending_attachment_changed/);f.setActor('owner');await assert.rejects(f.api.sendChatAttachment('conversation',image,'changed',attempt),/pending_attachment_changed/);assert.equal(f.tables.messages.length,1);
+});
+test('attachment cancellation uses the shared abandonment RPC and never removes a completed send',async()=>{
+ const f=fixture(),attempt={},image=file();f.faults.upload=true;await assert.rejects(f.api.sendChatAttachment('conversation',image,'hello',attempt));assert.equal(await f.api.cancelChatAttachment(attempt),'cancelled');assert.equal(f.tables.messages.length,0);assert.equal(f.objects.size,0);
+ const completed={};await f.api.sendChatAttachment('conversation',image,'hello',completed);assert.equal(await f.api.cancelChatAttachment(completed),'sent');assert.equal(f.objects.size,1);assert.equal(f.tables.messages.length,1);
+});
+test('message deletion uses narrow RPCs and propagates permission denials',async()=>{
+ const f=fixture();await f.api.deleteChatMessage('id','me');await f.api.deleteChatMessage('id','everyone');assert.deepEqual(f.calls,[['rpc','delete_message_for_me',{target_message:'id'}],['rpc','delete_message_for_everyone',{target_message:'id',deletion_note:null}]]);f.faults.rpc=true;await assert.rejects(f.api.deleteChatMessage('id','everyone'),e=>e.code==='42501');
+});
+test('invalid attachments and oversized text are rejected before creating any message',async()=>{
+ const f=fixture();await assert.rejects(f.api.sendChatAttachment('conversation',new File([],'empty.txt'),'',{}));await assert.rejects(f.api.sendChatAttachment('conversation',new File(['x'],'unsafe.exe'),'',{}),/unsupported_attachment/);await assert.rejects(f.api.sendChatAttachment('conversation',file(),'x'.repeat(2001),{}));assert.equal(f.calls.length,0);
+});

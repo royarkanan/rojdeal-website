@@ -1,0 +1,1 @@
+import{ChatPanel}from"@/components/chat/ChatPanel";import{i18n,type Locale}from"@/lib/i18n-config";export default async function Page({params}:{params:Promise<{lang:string,id:string}>}){const{lang:r,id}=await params;const lang=(i18n.locales.includes(r as Locale)?r:i18n.defaultLocale)as Locale;return <ChatPanel lang={lang} id={id}/>}

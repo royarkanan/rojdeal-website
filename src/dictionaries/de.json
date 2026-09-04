@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "RojDeal",
+    "tagline": "Ihre vertrauenswürdige Plattform für Immobilien und Fahrzeuge",
+    "search": "Suchen",
+    "searchPlaceholder": "Nach Immobilien, Fahrzeugen, Marken oder Orten suchen...",
+    "allCategories": "Alle Kategorien",
+    "allCities": "Alle Städte",
+    "price": "Preis",
+    "priceOnContact": "Preis auf Anfrage",
+    "featured": "Hervorgehoben",
+    "viewDetails": "Details ansehen",
+    "call": "Anrufen",
+    "whatsapp": "WhatsApp",
+    "share": "Teilen",
+    "favorite": "Favoriten",
+    "addListing": "Anzeige aufgeben",
+    "login": "Anmelden",
+    "language": "Sprache",
+    "noResults": "Keine passenden Ergebnisse gefunden",
+    "retry": "Erneut versuchen",
+    "loading": "Wird geladen..."
+  },
+  "nav": {
+    "home": "Startseite",
+    "realEstate": "Immobilien",
+    "vehicles": "Fahrzeuge",
+    "search": "Erweiterte Suche",
+    "about": "Über uns",
+    "contact": "Kontakt",
+    "terms": "AGB",
+    "privacy": "Datenschutz",
+    "safety": "Sicherheitshinweise"
+  },
+  "categories": {
+    "real_estate": "Immobilien",
+    "vehicles": "Fahrzeuge",
+    "miscellaneous": "Sonstiges"
+  },
+  "purpose": {
+    "all": "Alle",
+    "sell": "Kauf / Verkauf",
+    "rent": "Miete",
+    "wanted": "Gesuche"
+  },
+  "listingDetails": {
+    "specifications": "Hauptmerkmale",
+    "description": "Beschreibung",
+    "location": "Standort",
+    "sellerInfo": "Verkäuferinformationen",
+    "verifiedSeller": "Verifiziertes Konto",
+    "postedAt": "Veröffentlicht am",
+    "views": "Aufrufe",
+    "similarListings": "Ähnliche Angebote"
+  }
+}

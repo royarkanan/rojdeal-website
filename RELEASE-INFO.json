@@ -1,0 +1,10 @@
+{
+  "project": "RojDeal",
+  "checkpoint": "rojdeal-web-20260902-account-parity-review",
+  "productionApproved": false,
+  "statusDocument": "PRELAUNCH-STATUS.md",
+  "deploymentGuide": "docs/CLOUDFLARE-DEPLOYMENT.md",
+  "parentCheckpoint": "rojdeal-web-20260901-integrated-review",
+  "parentArchiveSha256": "d76e2e1a39cc40e51e0f5befcc43176d2e01718ad52969cd871f85d1939fa988",
+  "accountParityDocument": "docs/ACCOUNT-PARITY-2026-09-02.md"
+}
