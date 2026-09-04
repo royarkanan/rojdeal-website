@@ -157,6 +157,7 @@ async function createVideoPosterBlob(file: Blob): Promise<Blob> {
   if (typeof document === "undefined") throw new Error("browser_required");
 
   const objectUrl = URL.createObjectURL(file);
+
   try {
     return await new Promise<Blob>((resolve, reject) => {
       const video = document.createElement("video");
@@ -165,12 +166,18 @@ async function createVideoPosterBlob(file: Blob): Promise<Blob> {
       video.preload = "auto";
 
       let finished = false;
+      let candidates: number[] = [];
+      let candidateIndex = 0;
+      let bestTime = 0;
+      let bestScore = -1;
+      let phase: "scan" | "capture" = "scan";
+
       const timer = window.setTimeout(() => {
         if (!finished) {
           finished = true;
           reject(new Error("video_poster_timeout"));
         }
-      }, 20000);
+      }, 30000);
 
       const fail = () => {
         if (finished) return;
@@ -179,8 +186,71 @@ async function createVideoPosterBlob(file: Blob): Promise<Blob> {
         reject(new Error("video_poster_failed"));
       };
 
-      const capture = () => {
-        if (finished || !video.videoWidth || !video.videoHeight) return;
+      const frameScore = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 48;
+        canvas.height = 27;
+
+        const context = canvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+
+        if (!context) return -1;
+
+        try {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const pixels = context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          ).data;
+
+          let brightnessSum = 0;
+          let visiblePixels = 0;
+          let contrastSum = 0;
+          let previousBrightness = 0;
+
+          const count = pixels.length / 4;
+
+          for (let i = 0; i < pixels.length; i += 4) {
+            const brightness =
+              pixels[i] * 0.2126 +
+              pixels[i + 1] * 0.7152 +
+              pixels[i + 2] * 0.0722;
+
+            brightnessSum += brightness;
+
+            if (brightness > 18) {
+              visiblePixels += 1;
+            }
+
+            if (i > 0) {
+              contrastSum += Math.abs(brightness - previousBrightness);
+            }
+
+            previousBrightness = brightness;
+          }
+
+          const averageBrightness = brightnessSum / count;
+          const visibleRatio = visiblePixels / count;
+          const averageContrast = contrastSum / Math.max(1, count - 1);
+
+          return (
+            averageBrightness +
+            visibleRatio * 80 +
+            Math.min(averageContrast, 40)
+          );
+        } catch {
+          return -1;
+        }
+      };
+
+      const encodeCurrentFrame = () => {
+        if (finished || !video.videoWidth || !video.videoHeight) {
+          fail();
+          return;
+        }
 
         const maxWidth = 1280;
         const scale = Math.min(1, maxWidth / video.videoWidth);
@@ -192,6 +262,7 @@ async function createVideoPosterBlob(file: Blob): Promise<Blob> {
         canvas.height = height;
 
         const context = canvas.getContext("2d");
+
         if (!context) {
           fail();
           return;
@@ -206,21 +277,62 @@ async function createVideoPosterBlob(file: Blob): Promise<Blob> {
 
         canvas.toBlob(
           (blob) => {
-            if (!blob || finished) {
+            if (!blob) {
               fail();
               return;
             }
+
+            if (finished) return;
+
             finished = true;
             window.clearTimeout(timer);
             resolve(blob);
           },
           "image/jpeg",
-          0.84,
+          0.86,
         );
       };
 
+      const seekTo = (time: number) => {
+        try {
+          video.currentTime = time;
+        } catch {
+          fail();
+        }
+      };
+
       video.onerror = fail;
-      video.onseeked = capture;
+
+      video.onseeked = () => {
+        if (finished) return;
+
+        if (phase === "capture") {
+          encodeCurrentFrame();
+          return;
+        }
+
+        const score = frameScore();
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestTime = video.currentTime;
+        }
+
+        candidateIndex += 1;
+
+        if (candidateIndex < candidates.length) {
+          seekTo(candidates[candidateIndex]);
+          return;
+        }
+
+        phase = "capture";
+
+        if (Math.abs(video.currentTime - bestTime) < 0.02) {
+          encodeCurrentFrame();
+        } else {
+          seekTo(bestTime);
+        }
+      };
 
       video.onloadedmetadata = () => {
         const duration =
@@ -233,12 +345,43 @@ async function createVideoPosterBlob(file: Blob): Promise<Blob> {
           return;
         }
 
-        const targetTime =
-          duration > 2
-            ? 1
-            : Math.max(0.01, duration / 2);
+        const rawCandidates =
+          duration >= 8
+            ? [
+                1,
+                2,
+                3,
+                duration * 0.25,
+                duration * 0.5,
+                duration * 0.75,
+              ]
+            : [
+                duration * 0.15,
+                duration * 0.3,
+                duration * 0.5,
+                duration * 0.7,
+                duration * 0.85,
+              ];
 
-        video.currentTime = targetTime;
+        const maxTime = Math.max(0.05, duration - 0.05);
+
+        candidates = Array.from(
+          new Set(
+            rawCandidates.map((time) =>
+              Number(
+                Math.min(Math.max(time, 0.05), maxTime).toFixed(3),
+              ),
+            ),
+          ),
+        );
+
+        if (!candidates.length) {
+          fail();
+          return;
+        }
+
+        candidateIndex = 0;
+        seekTo(candidates[0]);
       };
 
       video.src = objectUrl;
